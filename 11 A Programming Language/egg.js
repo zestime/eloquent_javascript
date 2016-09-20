@@ -1,11 +1,8 @@
 // 11. Project : A Programming Language
 //
 
-//use strict;
+'use strict;';
 
-module.exports = {
-  parse
-}
 
 function parseExpression(program) {
   program = skipSpace(program);
@@ -25,8 +22,16 @@ function parseExpression(program) {
 function skipSpace(string) {
   var first = string.search(/\S/);
   if (first == -1) return "";
-  return string.slice(first);
+
+  var remain = string.slice(first);
+  if (remain[0] === '#'){
+    var line = remain.search(/\n|$/);
+    remain = remain.slice(line+1);
+    return skipSpace(remain);
+  }  
+  return remain;
 }
+
 
 function parseApply(expr, program) {
   program = skipSpace(program);
@@ -107,7 +112,82 @@ specialForms['do'] = function(args, env) {
 specialForms['define'] = function( args, env) {
   if (args.length != 2 || args[0].type != 'word')
     throw new SyntaxError('Bad use of define');
+  if (Object.prototype.hasOwnProperty.call(env, args[0].name))
+    throw new SyntaxError('Variable already defined');
   var value = evaluate(args[1], env);
-  env[arg[0].name] = value;
+  env[args[0].name] = value;
   return value;
 }
+specialForms['set'] = function( args, env) {
+  if (args.length != 2 || args[0].type != 'word')
+    throw new SyntaxError('Bad use of define');
+  if (!Object.prototype.hasOwnProperty.call(env, args[0].name))
+    throw new ReferenceError('Variable is not defined in local');
+  var value = evaluate(args[1], env);
+  env[args[0].name] = value;
+  return value;
+}
+specialForms['fun'] = function(args, env) {
+  if (!args.length) 
+    throw new SyntaxError('Functions need a body');
+  function name(expr) {
+    if (expr.type != 'word')
+      throw new SyntaxError('Arg names must be words');
+    return expr.name;
+  }
+
+  var argNames = args.slice(0, args.length - 1).map(name);
+  var body = args[args.length - 1];
+
+  return function() {
+    if (arguments.length != argNames.length) 
+      throw new TypeError('Wrong number of arguments');
+    var localEnv = Object.create(env);
+    for (var i=0; i<arguments.length; i++) 
+      localEnv[argNames[i]] = arguments[i];
+    return evaluate(body, localEnv);
+  };
+}
+
+//// top variables - literals & primitive operators
+var topEnv = Object.create(null);
+topEnv['true'] = true;
+topEnv['false'] = false;
+['+', '-', '*', '/', '==', '<', '>'].forEach(op => {
+  topEnv[op] = new Function("a, b", "return a " + op + "b;");
+});
+topEnv['print'] = function(value) {
+  return value;
+};
+topEnv['array'] = function() {
+  return Array.prototype.slice.call(arguments, 0); 
+}
+topEnv['length'] = function(array) {
+  if (array && array.constructor === Array) {
+    return array.length;
+  } 
+  throw new SyntaxError('The array is not proper array!');
+}
+topEnv['element'] = function(array, n) {
+  if (array && array.constructor === Array && n > -1) {
+    return array[n];
+  } 
+  throw new SyntaxError('Wrong array or index');
+
+}
+
+function run(){
+  var env = Object.create(topEnv);
+  var program = Array.prototype.slice.call(arguments, 0).join('\n');
+  var ast = parse(program);
+  return evaluate(ast, env);
+}
+
+////// EXPORT
+module.exports = {
+  parse,
+  evaluate,
+  run,
+  topEnv
+}
+
