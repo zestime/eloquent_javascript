@@ -1,0 +1,47 @@
+<!doctype html>
+<script src="code/mountains.js"></script>
+<script src="code/chapter/13_dom.js"></script>
+
+<style>
+.container {
+  position:absolute;
+  top:200px;
+  left:300px;
+}
+.cat {
+  position:absolute;
+}
+
+.hat {
+  position:absolute;
+}
+
+
+</style>
+<div class="container">
+  <img src="cat.jpg" id="cat" class="cat"> 
+  <img src="hat.jpg" id="hat" class="hat"> 
+</div>
+
+<script>
+var cat = document.querySelector("#cat");
+var hat = document.querySelector("#hat");
+
+var angle = 0, lastTime = null;
+function animate(time) {
+  if (lastTime != null)
+    angle += (time - lastTime) * 0.001;
+  lastTime = time;
+
+  setPosition(hat, 230, 80, angle);
+  setPosition(cat, 230, 80, angle + Math.PI);
+
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+
+function setPosition(node, x, y, angle) {
+  node.style.top = (Math.sin(angle) * 50 + y) + "px";
+  node.style.left = (Math.cos(angle) * 200 + x) + "px";
+}
+</script>

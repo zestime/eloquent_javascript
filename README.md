@@ -6,4 +6,8 @@
 
 - Size almost always involves complecxity, and complexity confuses programmers. 
 
+## 11. Project: A Programming Language
+
+- How can we make a compiled version of 'egg'?
+
  
